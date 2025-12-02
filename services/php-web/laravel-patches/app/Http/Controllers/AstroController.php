@@ -8,9 +8,11 @@ class AstroController extends Controller
 {
     public function events(Request $r)
     {
-        $lat  = (float) $r->query('lat', 55.7558);
-        $lon  = (float) $r->query('lon', 37.6176);
-        $days = max(1, min(30, (int) $r->query('days', 7)));
+        $lat       = (float) $r->query('lat', 55.7558);
+        $lon       = (float) $r->query('lon', 37.6176);
+        $days      = max(1, max(255, (int) $r->query('days', 7)));
+        $elevation = (int) $r->query('elevation', 0);
+        $time      = $r->query('time', '00:00:00');
 
         $from = now('UTC')->toDateString();
         $to   = now('UTC')->addDays($days)->toDateString();
@@ -22,32 +24,50 @@ class AstroController extends Controller
         }
 
         $auth = base64_encode($appId . ':' . $secret);
-        $url  = 'https://api.astronomyapi.com/api/v2/bodies/events?' . http_build_query([
+        $query = http_build_query([
             'latitude'  => $lat,
             'longitude' => $lon,
-            'from'      => $from,
-            'to'        => $to,
+            'from_date' => $from,
+            'to_date'   => $to,
+            'elevation' => $elevation,
+            'time'      => $time
         ]);
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => [
-                'Authorization: Basic ' . $auth,
-                'Content-Type: application/json',
-                'User-Agent: monolith-iss/1.0'
-            ],
-            CURLOPT_TIMEOUT        => 25,
-        ]);
-        $raw  = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE) ?: 0;
-        $err  = curl_error($ch);
-        curl_close($ch);
+        $allEvents = [];
+        foreach (['sun', 'moon'] as $body) {
+            $url = "https://api.astronomyapi.com/api/v2/bodies/events/{$body}?{$query}";
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => [
+                    'Authorization: Basic ' . $auth,
+                    'Content-Type: application/json',
+                ],
+                CURLOPT_TIMEOUT        => 25,
+            ]);
+            $raw  = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE) ?: 0;
+            curl_close($ch);
 
-        if ($raw === false || $code >= 400) {
-            return response()->json(['error' => $err ?: ("HTTP " . $code), 'code' => $code, 'raw' => $raw], 403);
+            if ($raw !== false && $code < 400) {
+                $data = json_decode($raw, true);
+                $events = $data['data']['table']['rows'][0]['cells'] ?? [];
+                foreach ($events as $event) {
+                    $event['body'] = $body;
+                    $event['name'] = ucfirst($body);
+                    $event['date'] = $event['eventHighlights']['peak']['date'] ?? null;
+
+                    $extra = $event['extraInfo'] ?? [];
+                    $lines = [];
+                    foreach ($extra as $key => $val) {
+                        $lines[] = "$key: $val";
+                    }
+                    $event['note'] = implode("\n", $lines);
+                    $allEvents[] = $event;
+                }
+            }
         }
-        $json = json_decode($raw, true);
-        return response()->json($json ?? ['raw' => $raw]);
+
+        return response()->json(['events' => $allEvents, 'count' => count($allEvents)]);
     }
 }

@@ -243,27 +243,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         const body = document.getElementById('astroBody');
         const raw  = document.getElementById('astroRaw');
 
-        function normalize(node){
-          const name = node.name || node.body || node.object || node.target || '';
-          const type = node.type || node.event_type || node.category || node.kind || '';
-          const when = node.time || node.date || node.occursAt || node.peak || node.instant || '';
-          const extra = node.magnitude || node.mag || node.altitude || node.note || '';
-          return {name, type, when, extra};
-        }
-
-        function collect(root){
-          const rows = [];
-          (function dfs(x){
-            if (!x || typeof x !== 'object') return;
-            if (Array.isArray(x)) { x.forEach(dfs); return; }
-            if ((x.type || x.event_type || x.category) && (x.name || x.body || x.object || x.target)) {
-              rows.push(normalize(x));
-            }
-            Object.values(x).forEach(dfs);
-          })(root);
-          return rows;
-        }
-
         async function load(q){
           body.innerHTML = '<tr><td colspan="5" class="text-muted">Загрузка…</td></tr>';
           const url = '/api/astro/events?' + new URLSearchParams(q).toString();
@@ -272,18 +251,18 @@ document.addEventListener('DOMContentLoaded', async function () {
             const js = await r.json();
             raw.textContent = JSON.stringify(js, null, 2);
 
-            const rows = collect(js);
-            if (!rows.length) {
+            const events = js.events || [];
+            if (!events.length) {
               body.innerHTML = '<tr><td colspan="5" class="text-muted">события не найдены</td></tr>';
               return;
             }
-            body.innerHTML = rows.slice(0,200).map((r,i)=>`
+            body.innerHTML = events.map((e,i)=>`
               <tr>
                 <td>${i+1}</td>
-                <td>${r.name || '—'}</td>
-                <td>${r.type || '—'}</td>
-                <td><code>${r.when || '—'}</code></td>
-                <td>${r.extra || ''}</td>
+                <td>${e.name || '—'}</td>
+                <td>${e.type || '—'}</td>
+                <td><code>${e.date || '—'}</code></td>
+                <td><pre class="m-0 small">${(e.note || '').replace(/</g,'&lt;')}</pre></td>
               </tr>
             `).join('');
           }catch(e){

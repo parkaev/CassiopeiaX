@@ -14,7 +14,7 @@ Route::get('/api/iss/trend', [\App\Http\Controllers\ProxyController::class, 'tre
 
 // JWST галерея (JSON)
 Route::get('/api/jwst/feed', [\App\Http\Controllers\DashboardController::class, 'jwstFeed']);
-Route::get("/api/astro/events", [\App\Http\Controllers\AstroController::class, "events"]);
+Route::get("/api/astro/events", [\App\Http\Controllers\AstroController::class, "events"]); //Не работает
 use App\Http\Controllers\AstroController;
 Route::get('/page/{slug}', [\App\Http\Controllers\CmsController::class, 'page']);
 Route::get('/page/{slug}', [\App\Http\Controllers\CmsController::class, 'page']);
