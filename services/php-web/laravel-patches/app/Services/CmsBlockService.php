@@ -15,7 +15,12 @@ class CmsBlockService
                 ->where('is_active', true)
                 ->first(['content']);
             
-            return $block?->content;
+            return $block?->content ? $this->sanitize($block->content) : null;
         });
+    }
+
+    private function sanitize(string $content): string
+    {
+        return htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 }

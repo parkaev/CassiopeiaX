@@ -156,16 +156,6 @@ fn env_u64(k: &str, d: u64) -> u64 {
 
 /* ---------- DB boot ---------- */
 async fn init_db(pool: &PgPool) -> anyhow::Result<()> {
-    // ISS
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS iss_fetch_log(
-            id BIGSERIAL PRIMARY KEY,
-            fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-            source_url TEXT NOT NULL,
-            payload JSONB NOT NULL
-        )"
-    ).execute(pool).await?;
-
     // OSDR
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS osdr_items(

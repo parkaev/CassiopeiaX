@@ -15,13 +15,6 @@ CREATE TABLE IF NOT EXISTS telemetry_legacy (
     source_file TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS cms_pages (
-    id BIGSERIAL PRIMARY KEY,
-    slug TEXT UNIQUE NOT NULL,
-    title TEXT NOT NULL,
-    body TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS cms_blocks (
     id BIGSERIAL PRIMARY KEY,
     slug TEXT UNIQUE NOT NULL,
@@ -30,15 +23,8 @@ CREATE TABLE IF NOT EXISTS cms_blocks (
     is_active BOOLEAN DEFAULT TRUE
 );
 
--- Seed with deliberately unsafe content for XSS practice
-INSERT INTO cms_pages(slug, title, body)
+INSERT INTO cms_blocks(slug, title, content)
 VALUES
-('welcome', 'Добро пожаловать', '<h3>Демо контент</h3><p>Этот текст хранится в БД</p>'),
-('unsafe', 'Небезопасный пример', '<script>console.log("XSS training")
-</script><p>Если вы видите всплывашку значит защита не работает</p>')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO cms_blocks(slug, title, content, is_active)
-VALUES
-('dashboard_experiment', 'Эксперимент', '<div class="alert alert-info">Это динамический блок из БД</div>', TRUE)
+('dashboard_welcome', 'Добро пожаловать', '<h3>Демо контент</h3><p>Этот текст хранится в БД</p>'),
+('dashboard_unsafe', 'Небезопасный пример', '<script>console.log("XSS training")</script><p>Если вы видите всплывашку значит защита не работает</p>')
 ON CONFLICT DO NOTHING;

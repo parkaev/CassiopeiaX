@@ -282,24 +282,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     </script>
 
 
-{{-- ===== Данный блок ===== --}}
+{{-- ===== CMS Blocks ===== --}}
 <div class="card mt-3">
-  <div class="card-header fw-semibold">CMS</div>
+  <div class="card-header fw-semibold">CMS — welcome</div>
   <div class="card-body">
-    @if($dashboard_experiment)
-      {!! $dashboard_experiment !!}
+    @if($dashboard_welcome)
+      {!! $dashboard_welcome !!}
     @else
       <div class="text-muted">блок не найден</div>
     @endif
   </div>
 </div>
 
-{{-- ===== CMS-блок из БД (нарочно сырая вставка) ===== --}}
 <div class="card mt-3">
-  <div class="card-header fw-semibold">CMS — блок из БД</div>
+  <div class="card-header fw-semibold">CMS — unsafe</div>
   <div class="card-body">
-    @if($dashboard_experiment)
-      {!! $dashboard_experiment !!}
+    @if(dashboard_unsafe)
+      {!! dashboard_unsafe !!}
     @else
       <div class="text-muted">блок не найден</div>
     @endif
@@ -325,10 +324,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 {{-- ===== CMS-блок из БД (нарочно сырая вставка) ===== --}}
 <div class="card mt-3">
-  <div class="card-header fw-semibold">CMS — блок из БД</div>
+  <div class="card-header fw-semibold">CMS — not found</div>
   <div class="card-body">
-    @if($dashboard_experiment)
-      {!! $dashboard_experiment !!}
+    @if($dashboard_not_found)
+      {!! $dashboard_not_found !!}
     @else
       <div class="text-muted">блок не найден</div>
     @endif

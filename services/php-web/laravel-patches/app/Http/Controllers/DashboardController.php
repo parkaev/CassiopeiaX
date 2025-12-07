@@ -36,7 +36,8 @@ class DashboardController extends Controller
                 'iss_alt'   => $iss['payload']['altitude'] ?? null,
                 'neo_total' => 0,
             ],
-            'dashboard_experiment' => $cmsService->getBlockContent('dashboard_experiment'),
+            'dashboard_experiment' => $cmsService->getBlockContent('cms_blocks'),
+
         ]);
     }
 
