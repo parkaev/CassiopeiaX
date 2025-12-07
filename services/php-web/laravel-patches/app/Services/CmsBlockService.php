@@ -21,6 +21,27 @@ class CmsBlockService
 
     private function sanitize(string $content): string
     {
-        return htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return $this->sanitizeHtml($content);
+    }
+
+    /**
+     * Санитизация HTML: удаление опасных тегов и атрибутов
+     */
+    private function sanitizeHtml(?string $html): string
+    {
+        if ($html === null) {
+            return '';
+        }
+        // Удаляем script, style, iframe, object, embed теги
+        $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
+        $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
+        $html = preg_replace('/<(iframe|object|embed|form)[^>]*>.*?<\/\1>/is', '', $html);
+        $html = preg_replace('/<(iframe|object|embed|form)[^>]*\/?>/is', '', $html);
+        // Удаляем on* атрибуты (onclick, onerror и т.д.)
+        $html = preg_replace('/\s+on\w+\s*=\s*["\'][^"\']*["\']/i', '', $html);
+        $html = preg_replace('/\s+on\w+\s*=\s*[^\s>]+/i', '', $html);
+        // Удаляем javascript: в href/src
+        $html = preg_replace('/\b(href|src)\s*=\s*["\']?\s*javascript:[^"\'>\s]*/i', '', $html);
+        return $html;
     }
 }

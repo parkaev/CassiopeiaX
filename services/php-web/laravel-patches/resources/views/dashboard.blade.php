@@ -297,8 +297,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 <div class="card mt-3">
   <div class="card-header fw-semibold">CMS — unsafe</div>
   <div class="card-body">
-    @if(dashboard_unsafe)
-      {!! dashboard_unsafe !!}
+    @if($dashboard_unsafe)
+      {!! $dashboard_unsafe !!}
     @else
       <div class="text-muted">блок не найден</div>
     @endif
@@ -322,11 +322,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-{{-- ===== CMS-блок из БД (нарочно сырая вставка) ===== --}}
 <div class="card mt-3">
   <div class="card-header fw-semibold">CMS — not found</div>
   <div class="card-body">
-    @if($dashboard_not_found)
+    @if(!empty($dashboard_not_found))
       {!! $dashboard_not_found !!}
     @else
       <div class="text-muted">блок не найден</div>

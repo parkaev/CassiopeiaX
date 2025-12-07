@@ -26,5 +26,5 @@ CREATE TABLE IF NOT EXISTS cms_blocks (
 INSERT INTO cms_blocks(slug, title, content)
 VALUES
 ('dashboard_welcome', 'Добро пожаловать', '<h3>Демо контент</h3><p>Этот текст хранится в БД</p>'),
-('dashboard_unsafe', 'Небезопасный пример', '<script>console.log("XSS training")</script><p>Если вы видите всплывашку значит защита не работает</p>')
+('dashboard_unsafe', 'Небезопасный пример', '<script>console.log("XSS training")</script><p>Если вы видите всплывашку значит защита не работает (работает - console.log не выводится)</p>')
 ON CONFLICT DO NOTHING;
