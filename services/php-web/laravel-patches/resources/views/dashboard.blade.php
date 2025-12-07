@@ -29,15 +29,7 @@
     <div class="col-lg-5">
       <div class="card shadow-sm h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="card-title mb-0">МКС — положение и движение</h5>
-            <button id="issRefreshBtn" class="btn btn-sm btn-outline-primary" title="Обновить данные">
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-              </svg>
-            </button>
-          </div>
+          <h5 class="card-title">МКС — положение и движение</h5>
           <div id="map" class="rounded mb-2 border" style="height:300px"></div>
           <div class="row g-2">
             <div class="col-6"><canvas id="issSpeedChart" height="110"></canvas></div>
@@ -176,8 +168,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     
     updateISS();
     setInterval(updateISS, 15000);
-    
-    document.getElementById('issRefreshBtn').addEventListener('click', updateISS);
   }
 
   // ====== JWST ГАЛЕРЕЯ ======
