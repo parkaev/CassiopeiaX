@@ -286,15 +286,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 <div class="card mt-3">
   <div class="card-header fw-semibold">CMS</div>
   <div class="card-body">
-    @php
-      try {
-        // «плохо»: запрос из Blade, без кэша, без репозитория
-        $___b = DB::selectOne("SELECT content FROM cms_blocks WHERE slug='dashboard_experiment' AND is_active = TRUE LIMIT 1");
-        echo $___b ? $___b->content : '<div class="text-muted">блок не найден</div>';
-      } catch (\Throwable $e) {
-        echo '<div class="text-danger">ошибка БД: '.e($e->getMessage()).'</div>';
-      }
-    @endphp
+    @if($dashboard_experiment)
+      {!! $dashboard_experiment !!}
+    @else
+      <div class="text-muted">блок не найден</div>
+    @endif
   </div>
 </div>
 
@@ -302,15 +298,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 <div class="card mt-3">
   <div class="card-header fw-semibold">CMS — блок из БД</div>
   <div class="card-body">
-    @php
-      try {
-        // «плохо»: запрос из Blade, без кэша, без репозитория
-        $___b = DB::selectOne("SELECT content FROM cms_blocks WHERE slug='dashboard_experiment' AND is_active = TRUE LIMIT 1");
-        echo $___b ? $___b->content : '<div class="text-muted">блок не найден</div>';
-      } catch (\Throwable $e) {
-        echo '<div class="text-danger">ошибка БД: '.e($e->getMessage()).'</div>';
-      }
-    @endphp
+    @if($dashboard_experiment)
+      {!! $dashboard_experiment !!}
+    @else
+      <div class="text-muted">блок не найден</div>
+    @endif
   </div>
 </div>
 
@@ -335,14 +327,10 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="card mt-3">
   <div class="card-header fw-semibold">CMS — блок из БД</div>
   <div class="card-body">
-    @php
-      try {
-        // «плохо»: запрос из Blade, без кэша, без репозитория
-        $___b = DB::selectOne("SELECT content FROM cms_blocks WHERE slug='dashboard_experiment' AND is_active = TRUE LIMIT 1");
-        echo $___b ? $___b->content : '<div class="text-muted">блок не найден</div>';
-      } catch (\Throwable $e) {
-        echo '<div class="text-danger">ошибка БД: '.e($e->getMessage()).'</div>';
-      }
-    @endphp
+    @if($dashboard_experiment)
+      {!! $dashboard_experiment !!}
+    @else
+      <div class="text-muted">блок не найден</div>
+    @endif
   </div>
 </div>

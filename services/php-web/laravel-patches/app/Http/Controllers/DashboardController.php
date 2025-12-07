@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Support\JwstHelper;
+use App\Services\CmsBlockService;
 
 class DashboardController extends Controller
 {
@@ -15,7 +16,7 @@ class DashboardController extends Controller
         return $raw ? (json_decode($raw, true) ?: []) : [];
     }
 
-    public function index()
+    public function index(CmsBlockService $cmsService)
     {
         // минимум: карта МКС и пустые контейнеры, JWST-галерея подтянется через /api/jwst/feed
         $b     = $this->base();
@@ -35,6 +36,7 @@ class DashboardController extends Controller
                 'iss_alt'   => $iss['payload']['altitude'] ?? null,
                 'neo_total' => 0,
             ],
+            'dashboard_experiment' => $cmsService->getBlockContent('dashboard_experiment'),
         ]);
     }
 
