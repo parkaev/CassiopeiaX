@@ -6,11 +6,11 @@
   <div class="row g-3 mb-2">
     <div class="col-6 col-md-3"><div class="border rounded p-2 text-center">
       <div class="small text-muted">Скорость МКС</div>
-      <div class="fs-4">{{ isset(($iss['payload'] ?? [])['velocity']) ? number_format($iss['payload']['velocity'],0,'',' ') : '—' }}</div>
+      <div class="fs-4" id="issSpeed">{{ isset(($iss['payload'] ?? [])['velocity']) ? number_format($iss['payload']['velocity'],0,'',' ') : '—' }}</div>
     </div></div>
     <div class="col-6 col-md-3"><div class="border rounded p-2 text-center">
       <div class="small text-muted">Высота МКС</div>
-      <div class="fs-4">{{ isset(($iss['payload'] ?? [])['altitude']) ? number_format($iss['payload']['altitude'],0,'',' ') : '—' }}</div>
+      <div class="fs-4" id="issAlt">{{ isset(($iss['payload'] ?? [])['altitude']) ? number_format($iss['payload']['altitude'],0,'',' ') : '—' }}</div>
     </div></div>
   </div>
 
@@ -29,7 +29,15 @@
     <div class="col-lg-5">
       <div class="card shadow-sm h-100">
         <div class="card-body">
-          <h5 class="card-title">МКС — положение и движение</h5>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="card-title mb-0">МКС — положение и движение</h5>
+            <button id="issRefreshBtn" class="btn btn-sm btn-outline-primary" title="Обновить данные">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+              </svg>
+            </button>
+          </div>
           <div id="map" class="rounded mb-2 border" style="height:300px"></div>
           <div class="row g-2">
             <div class="col-6"><canvas id="issSpeedChart" height="110"></canvas></div>
@@ -101,44 +109,75 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async function () {
-  // ====== карта и графики МКС (как раньше) ======
+  // ====== карта и графики МКС ======
   if (typeof L !== 'undefined' && typeof Chart !== 'undefined') {
     const last = @json(($iss['payload'] ?? []));
     let lat0 = Number(last.latitude || 0), lon0 = Number(last.longitude || 0);
     const map = L.map('map', { attributionControl:false }).setView([lat0||0, lon0||0], lat0?3:2);
     L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', { noWrap:true }).addTo(map);
-    const trail  = L.polyline([], {weight:3}).addTo(map);
+    const trail  = L.polyline([], {weight:3, color:'#0d6efd'}).addTo(map);
     const marker = L.marker([lat0||0, lon0||0]).addTo(map).bindPopup('МКС');
 
+    const points = [];
+    const maxPoints = 240;
+    let lastLat = null, lastLon = null;
+
     const speedChart = new Chart(document.getElementById('issSpeedChart'), {
-      type: 'line', data: { labels: [], datasets: [{ label: 'Скорость', data: [] }] },
-      options: { responsive: true, scales: { x: { display: false } } }
+      type: 'line', data: { labels: [], datasets: [{ label: 'Скорость', data: [], borderColor: '#0d6efd', tension: 0.1 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } } }
     });
     const altChart = new Chart(document.getElementById('issAltChart'), {
-      type: 'line', data: { labels: [], datasets: [{ label: 'Высота', data: [] }] },
-      options: { responsive: true, scales: { x: { display: false } } }
+      type: 'line', data: { labels: [], datasets: [{ label: 'Высота', data: [], borderColor: '#198754', tension: 0.1 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } } }
     });
 
-    async function loadTrend() {
+    async function updateISS() {
       try {
-        const r = await fetch('/api/iss/trend?limit=240');
-        const js = await r.json();
-        const pts = Array.isArray(js.points) ? js.points.map(p => [p.lat, p.lon]) : [];
-        if (pts.length) {
-          trail.setLatLngs(pts);
-          marker.setLatLng(pts[pts.length-1]);
+        const r = await fetch('/api/iss/last');
+        const data = await r.json();
+        const p = data.payload;
+        
+        if (p && p.latitude && p.longitude) {
+          // Добавляем точку только если координаты изменились
+          if (lastLat !== p.latitude || lastLon !== p.longitude) {
+            points.push({
+              lat: p.latitude,
+              lon: p.longitude,
+              velocity: p.velocity,
+              altitude: p.altitude,
+              time: new Date().toLocaleTimeString()
+            });
+            
+            lastLat = p.latitude;
+            lastLon = p.longitude;
+            
+            if (points.length > maxPoints) points.shift();
+            
+            const coords = points.map(pt => [pt.lat, pt.lon]);
+            trail.setLatLngs(coords);
+            
+            speedChart.data.labels = points.map(pt => pt.time);
+            speedChart.data.datasets[0].data = points.map(pt => pt.velocity);
+            speedChart.update('none');
+            
+            altChart.data.labels = points.map(pt => pt.time);
+            altChart.data.datasets[0].data = points.map(pt => pt.altitude);
+            altChart.update('none');
+          }
+          
+          // Маркер и карточки обновляем всегда
+          marker.setLatLng([p.latitude, p.longitude]);
+          map.setView([p.latitude, p.longitude], map.getZoom());
+          document.getElementById('issSpeed').textContent = Math.round(p.velocity).toLocaleString('ru-RU');
+          document.getElementById('issAlt').textContent = Math.round(p.altitude).toLocaleString('ru-RU');
         }
-        const t = (js.points||[]).map(p => new Date(p.at).toLocaleTimeString());
-        speedChart.data.labels = t;
-        speedChart.data.datasets[0].data = (js.points||[]).map(p => p.velocity);
-        speedChart.update();
-        altChart.data.labels = t;
-        altChart.data.datasets[0].data = (js.points||[]).map(p => p.altitude);
-        altChart.update();
-      } catch(e) {}
+      } catch(e) { console.error('ISS update error:', e); }
     }
-    loadTrend();
-    setInterval(loadTrend, 15000);
+    
+    updateISS();
+    setInterval(updateISS, 15000);
+    
+    document.getElementById('issRefreshBtn').addEventListener('click', updateISS);
   }
 
   // ====== JWST ГАЛЕРЕЯ ======
