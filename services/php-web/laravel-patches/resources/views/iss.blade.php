@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-4">
+<div class="container py-4 mt-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="mb-0">МКС данные</h3>
     <button id="refreshBtn" class="btn btn-primary">

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container pb-5">
+<div class="container pb-5 mt-3">
   <div class="card shadow-sm">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-3">

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container pb-5">
+<div class="container pb-5 mt-3">
   {{-- ===== CMS Blocks ===== --}}
   <div class="card mt-3">
     <div class="card-header fw-semibold">CMS — welcome</div>

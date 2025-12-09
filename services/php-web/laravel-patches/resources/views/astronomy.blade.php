@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container pb-5">
+<div class="container pb-5 mt-3">
   <div class="row">
     <div class="col-12">
       <div class="card shadow-sm">
@@ -52,7 +52,7 @@
     const raw  = document.getElementById('astroRaw');
 
     async function load(q){
-      body.innerHTML = '<tr><td colspan="5" class="text-muted">Загрузка…</td></tr>';
+      body.innerHTML = '<tr><td colspan="5" class="text-muted loading">Загрузка<span class="spinner-dots"></span></td></tr>';
       const url = '/api/astro/events?' + new URLSearchParams(q).toString();
       try{
         const r  = await fetch(url);

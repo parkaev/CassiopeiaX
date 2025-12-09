@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container pb-5">
+<div class="container pb-5 mt-3">
   {{-- верхние карточки --}}
   <div class="row g-3 mb-2">
     <div class="col-6"><div class="border rounded p-2 text-center">
@@ -14,21 +14,43 @@
     </div></div>
   </div>
 
-  <div class="row g-3">
-    {{-- левая колонка: JWST наблюдение --}}
-    <div class="col-lg-6">
+  <style>
+    #jwstCol { 
+      max-width: 0; 
+      opacity: 0; 
+      overflow: hidden; 
+      padding: 0 !important;
+      transition: max-width 0.4s ease, opacity 0.4s ease, padding 0.4s ease;
+    }
+    #jwstCol.show { 
+      max-width: 50%; 
+      opacity: 1; 
+      padding: 0 calc(var(--bs-gutter-x) * .5) !important;
+    }
+    #issCol {
+      transition: max-width 0.4s ease;
+    }
+    @media (max-width: 991.98px) {
+      #jwstCol.show { max-width: 100%; }
+    }
+  </style>
+
+  <div class="row g-3" id="mainRow">
+    {{-- левая колонка: JWST наблюдение (скрыта по умолчанию) --}}
+    <div class="col-lg-6" id="jwstCol">
       <div class="card shadow-sm h-100">
         <div class="card-body">
-          <h5 class="card-title">JWST — выбранное наблюдение</h5>
-          <div id="jwstViewer">
-            <div class="text-muted text-center py-4">Выберите изображение из галереи ниже</div>
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title m-0">JWST — выбранное наблюдение</h5>
+            <button type="button" class="btn-close" id="closeJwst" aria-label="Закрыть"></button>
           </div>
+          <div id="jwstViewer" class="mt-3"></div>
         </div>
       </div>
     </div>
 
-    {{-- правая колонка: карта МКС --}}
-    <div class="col-lg-6">
+    {{-- правая колонка: карта МКС (на всю ширину по умолчанию) --}}
+    <div class="col-lg" id="issCol">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h5 class="card-title">МКС — положение и движение</h5>
@@ -108,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const last = @json(($iss['payload'] ?? []));
     let lat0 = Number(last.latitude || 0), lon0 = Number(last.longitude || 0);
     const map = L.map('map', { attributionControl:false }).setView([lat0||0, lon0||0], lat0?3:2);
+    window._issMap = map;
     L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', { noWrap:true }).addTo(map);
     const trail  = L.polyline([], {weight:3, color:'#0d6efd'}).addTo(map);
     const marker = L.marker([lat0||0, lon0||0]).addTo(map).bindPopup('МКС');
@@ -187,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   srcSel.addEventListener('change', toggleInputs); toggleInputs();
 
   async function loadFeed(qs){
-    track.innerHTML = '<div class="p-3 text-muted">Загрузка…</div>';
+    track.innerHTML = '<div class="p-3 text-muted loading">Загрузка<span class="spinner-dots"></span></div>';
     info.textContent= '';
     try{
       const url = '/api/jwst/feed?'+new URLSearchParams(qs).toString();
@@ -211,8 +234,18 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   function showJwstImage(item) {
+    const jwstCol = document.getElementById('jwstCol');
     const viewer = document.getElementById('jwstViewer');
     const instruments = Array.isArray(item.inst) ? item.inst.join(', ') : (item.inst || '—');
+    
+    // Show JWST panel
+    if (!jwstCol.classList.contains('show')) {
+      jwstCol.classList.add('show');
+      setTimeout(() => {
+        if (window._issMap) window._issMap.invalidateSize();
+      }, 450);
+    }
+    
     viewer.innerHTML = `
       <div class="text-center">
         <img src="${item.url}" alt="JWST" class="rounded mb-3" style="width:100%; height:280px; object-fit:contain; background:#f8f9fa">
@@ -228,6 +261,15 @@ document.addEventListener('DOMContentLoaded', async function () {
       </div>
     `;
   }
+
+  // Close JWST viewer
+  document.getElementById('closeJwst').addEventListener('click', function() {
+    const jwstCol = document.getElementById('jwstCol');
+    jwstCol.classList.remove('show');
+    setTimeout(() => {
+      if (window._issMap) window._issMap.invalidateSize();
+    }, 450);
+  });
 
   form.addEventListener('submit', function(ev){
     ev.preventDefault();
