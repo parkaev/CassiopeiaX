@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::PgPool;
+use crate::rate_limiter::RateLimiter;
 
 #[derive(Serialize)]
 pub struct Health {
@@ -20,6 +21,8 @@ pub struct AppState {
     pub every_neo: u64,
     pub every_donki: u64,
     pub every_spacex: u64,
+    pub nasa_limiter: RateLimiter,
+    pub spacex_limiter: RateLimiter,
 }
 
 #[derive(Serialize, Default)]

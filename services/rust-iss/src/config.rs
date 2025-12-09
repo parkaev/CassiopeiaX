@@ -1,4 +1,5 @@
 use crate::types::AppState;
+use crate::rate_limiter::RateLimiter;
 use sqlx::postgres::PgPoolOptions;
 
 pub fn env_u64(k: &str, d: u64) -> u64 {
@@ -24,6 +25,11 @@ pub async fn create_app_state() -> anyhow::Result<AppState> {
 
     let pool = PgPoolOptions::new().max_connections(5).connect(&db_url).await?;
 
+    // NASA API: 30 requests per hour for DEMO_KEY, 1000/hour with key
+    // SpaceX API: no official limit, but be respectful (30 req/min)
+    let nasa_limiter = RateLimiter::new(30); // 30 req/min max
+    let spacex_limiter = RateLimiter::new(30);
+
     Ok(AppState {
         pool,
         nasa_url,
@@ -35,5 +41,7 @@ pub async fn create_app_state() -> anyhow::Result<AppState> {
         every_neo,
         every_donki,
         every_spacex,
+        nasa_limiter,
+        spacex_limiter,
     })
 }
