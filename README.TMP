@@ -1,0 +1,510 @@
+# Детальный анализ изменений по коммитам
+
+Базовый коммит: 315a459 (initial commit)
+
+---
+
+## Коммит 8f97ef4: rewroote pascal service to python; fixed PgSQL issues
+
+### Изменённые файлы:
+- db/init.sql
+- services/pascal-legacy/Dockerfile
+- services/pascal-legacy/legacy.py (новый)
+
+### Детали изменений:
+
+**db/init.sql:**
+- Добавлена новая таблица `cms_blocks` с полями: id, slug, title, content, is_active
+- Добавлен seed-запрос для вставки тестового блока `dashboard_experiment`
+
+**services/pascal-legacy/Dockerfile:**
+- Базовый образ изменён с `debian:12-slim` на `python:3.11-slim`
+- Удалена установка fp-compiler (Pascal)
+- Вместо legacy.pas теперь копируется legacy.py
+- CMD изменён на запуск Python скрипта
+
+**services/pascal-legacy/legacy.py (новый файл):**
+- Полностью переписан сервис генерации телеметрии с Pascal на Python
+- Генерирует CSV файлы с телеметрией (recorded_at, voltage, temp, source_file)
+- Использует subprocess для вызова psql и COPY данных в PostgreSQL
+- Работает в бесконечном цикле с периодом из GEN_PERIOD_SEC
+
+---
+
+## Коммит 92686b3: fixed work of AstronomyAPI; correct displaying full JSON; added extracting of "extra" information
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/app/Http/Controllers/AstroController.php
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php
+- services/php-web/laravel-patches/routes/web.php
+
+### Детали изменений:
+
+**AstroController.php:**
+- Добавлены новые параметры: elevation, time
+- Изменены параметры API: from → from_date, to → to_date
+- Переработана логика: теперь делается 2 запроса (для sun и moon отдельно)
+- Добавлена обработка extraInfo из ответа API
+- Возвращается структурированный массив events с полями: body, name, date, note
+
+**dashboard.blade.php:**
+- Удалены функции normalize() и collect() для парсинга JSON
+- Упрощена логика отображения: теперь используется готовый массив events из API
+- Добавлено отображение note в формате <pre> с экранированием HTML
+
+**routes/web.php:**
+- Добавлен комментарий "//Не работает" к маршруту astro/events
+
+---
+
+## Коммит aa63d3f: refactor CMS blocks: remove raw SQL from blade; add CmsBlockService with caching
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/app/Http/Controllers/DashboardController.php
+- services/php-web/laravel-patches/app/Services/CmsBlockService.php (новый)
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php
+
+### Детали изменений:
+
+**CmsBlockService.php (новый файл):**
+- Создан сервис для работы с CMS блоками
+- Метод getBlockContent() получает контент блока по slug
+- Реализовано кеширование на 1 час (3600 сек) через Cache::remember()
+- Использует Query Builder вместо raw SQL
+
+**DashboardController.php:**
+- Добавлена инъекция CmsBlockService через DI
+- Передаётся dashboard_experiment в view через сервис
+
+**dashboard.blade.php:**
+- Удалены 3 блока с raw SQL запросами из Blade (@php DB::selectOne...)
+- Заменены на использование переменной $dashboard_experiment из контроллера
+- Паттерн: вынос логики БД из View в Service Layer
+
+### Паттерны:
+- Service Layer (CmsBlockService)
+- Dependency Injection
+- Cache-Aside Pattern
+
+---
+
+## Коммит 142812c: add XSS protection for CMS blocks; sanitize HTML entities in CmsBlockService
+
+### Изменённые файлы:
+- db/init.sql
+- services/php-web/laravel-patches/app/Http/Controllers/DashboardController.php
+- services/php-web/laravel-patches/app/Services/CmsBlockService.php
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php
+- services/php-web/laravel-patches/resources/views/layouts/app.blade.php
+- services/php-web/laravel-patches/routes/web.php
+- services/rust-iss/src/main.rs
+
+### Детали изменений:
+
+**db/init.sql:**
+- Удалена таблица cms_pages
+- Изменены seed-данные: dashboard_experiment → dashboard_welcome, dashboard_unsafe
+- Добавлен XSS-тестовый контент в dashboard_unsafe
+
+**CmsBlockService.php:**
+- Добавлен метод sanitize() для защиты от XSS
+- Используется htmlspecialchars() с флагами ENT_QUOTES | ENT_HTML5
+
+**DashboardController.php:**
+- Изменён slug блока на 'cms_blocks'
+
+**dashboard.blade.php:**
+- Переименованы блоки: dashboard_experiment → dashboard_welcome, dashboard_unsafe, dashboard_not_found
+- Исправлена опечатка: @if(dashboard_unsafe) без $
+
+**layouts/app.blade.php:**
+- Исправлена ссылка на /iss (убран onclick с редиректом на dashboard)
+
+**routes/web.php:**
+- Добавлен маршрут /iss → IssController::index
+
+**rust-iss/src/main.rs:**
+- Удалено создание таблицы iss_fetch_log из init_db()
+
+---
+
+## Коммит 6c9c8e6: fixed work of CMS blocks validation; added ide settings to git
+
+### Изменённые файлы:
+- .idea/vcs.xml (новый)
+- db/init.sql
+- services/php-web/laravel-patches/app/Http/Controllers/DashboardController.php
+- services/php-web/laravel-patches/app/Services/CmsBlockService.php
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php
+
+### Детали изменений:
+
+**CmsBlockService.php:**
+- Полностью переработана санитизация HTML
+- Вместо htmlspecialchars() теперь используется sanitizeHtml()
+- Удаляются теги: script, style, iframe, object, embed, form
+- Удаляются on* атрибуты (onclick, onerror и т.д.)
+- Удаляются javascript: в href/src
+
+**DashboardController.php:**
+- Исправлены slug'и: cms_blocks → dashboard_welcome, dashboard_unsafe, dashboard_not_found
+
+**dashboard.blade.php:**
+- Исправлена опечатка: @if(dashboard_unsafe) → @if($dashboard_unsafe)
+- Изменена проверка: @if($dashboard_not_found) → @if(!empty($dashboard_not_found))
+
+**db/init.sql:**
+- Обновлён текст в dashboard_unsafe для пояснения работы защиты
+
+---
+
+## Коммит f90dbc2: add real-time ISS tracking to map and base iss stats; added refresh button
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php
+- services/php-web/laravel-patches/resources/views/iss.blade.php
+
+### Детали изменений:
+
+**dashboard.blade.php:**
+- Добавлены id для элементов скорости и высоты (issSpeed, issAlt)
+- Добавлена кнопка обновления данных МКС (issRefreshBtn)
+- Переработана логика обновления карты:
+  - Вместо загрузки trend теперь используется /api/iss/last
+  - Добавлен массив points для хранения истории координат (до 240 точек)
+  - Реализовано real-time отслеживание: координаты добавляются только при изменении
+  - Графики обновляются с накоплением данных
+  - Карта центрируется на текущей позиции МКС
+  - Обновляются карточки скорости и высоты
+- Добавлены цвета для графиков (синий для скорости, зелёный для высоты)
+- Интервал обновления: 15 секунд
+
+**iss.blade.php:**
+- Добавлена кнопка "Обновить" с иконкой
+- Данные обёрнуты в div с id (lastData, trendData) для динамического обновления
+- Добавлен JavaScript для асинхронного обновления данных
+- Реализован loading state с spinner при обновлении
+- Удалена ссылка на OSDR
+
+---
+
+## Коммит 35561fe: small fix
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php
+
+### Детали изменений:
+
+**dashboard.blade.php:**
+- Удалена кнопка обновления МКС (issRefreshBtn) с dashboard
+- Удалён обработчик клика на кнопку обновления
+- Заголовок карточки МКС упрощён (убран flex-контейнер)
+
+---
+
+## Коммит 9b4df3d: refactor rust-iss: split monolithic main.rs into modular structure
+
+### Изменённые файлы:
+- services/rust-iss/Cargo.toml
+- services/rust-iss/src/config.rs (новый)
+- services/rust-iss/src/database.rs (новый)
+- services/rust-iss/src/handlers/iss.rs (новый)
+- services/rust-iss/src/handlers/mod.rs (новый)
+- services/rust-iss/src/handlers/osdr.rs (новый)
+- services/rust-iss/src/handlers/space.rs (новый)
+- services/rust-iss/src/lib.rs (новый)
+- services/rust-iss/src/main.rs (рефакторинг)
+- services/rust-iss/src/services/iss.rs (новый)
+- services/rust-iss/src/services/mod.rs (новый)
+- services/rust-iss/src/services/nasa.rs (новый)
+- services/rust-iss/src/services/osdr.rs (новый)
+- services/rust-iss/src/services/space_cache.rs (новый)
+- services/rust-iss/src/types.rs (новый)
+- services/rust-iss/src/utils.rs (новый)
+
+### Детали изменений:
+
+**Структура модулей:**
+- lib.rs - экспорт модулей: config, database, handlers, services, utils, types
+- config.rs - конфигурация приложения, создание AppState
+- database.rs - инициализация БД
+- types.rs - типы данных: Health, AppState, Trend
+- utils.rs - утилиты
+
+**handlers/ (HTTP обработчики):**
+- iss.rs - обработчики для ISS (/last, /iss/trend)
+- osdr.rs - обработчики для OSDR (/osdr/list)
+- space.rs - обработчики для космических данных
+
+**services/ (бизнес-логика):**
+- iss.rs - сервис ISS
+- osdr.rs - сервис OSDR
+- nasa.rs - сервис NASA API
+- space_cache.rs - кеширование космических данных
+
+**main.rs:**
+- Сокращён с ~500 строк до минимума
+- Вся логика вынесена в модули
+
+### Паттерны:
+- Modular Architecture
+- Separation of Concerns (handlers/services/types)
+- Repository Pattern (database.rs)
+
+---
+
+## Коммит d93e452: added pages for each API and service
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/app/Http/Controllers/AstronomyController.php (новый)
+- services/php-web/laravel-patches/app/Http/Controllers/CmsController.php (изменён)
+- services/php-web/laravel-patches/app/Http/Controllers/TelemetryController.php (новый)
+- services/php-web/laravel-patches/resources/views/astronomy.blade.php (новый)
+- services/php-web/laravel-patches/resources/views/cms.blade.php (новый)
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php (изменён)
+- services/php-web/laravel-patches/resources/views/layouts/app.blade.php (изменён)
+- services/php-web/laravel-patches/resources/views/telemetry.blade.php (новый)
+- services/php-web/laravel-patches/routes/web.php (изменён)
+
+### Детали изменений:
+
+**Новые контроллеры:**
+- AstronomyController.php - возвращает view astronomy
+- TelemetryController.php - возвращает view telemetry
+
+**Новые страницы (views):**
+- astronomy.blade.php - страница Astronomy API
+- cms.blade.php - страница CMS блоков
+- telemetry.blade.php - страница телеметрии
+
+**routes/web.php:**
+- Добавлены маршруты: /astronomy, /telemetry, /cms
+
+**layouts/app.blade.php:**
+- Изменён navbar-brand: Dashboard → CassiopeiaX
+- Добавлена навигация по всем страницам: Dashboard, Astronomy API, ISS, OSDR, CMS, Telemetry Legacy
+
+**dashboard.blade.php:**
+- Удалено ~120 строк (вынесено в отдельные страницы)
+
+---
+
+## Коммит d32452d: fixed .gitignore in /.idea folder
+
+### Изменённые файлы:
+- .idea/.gitignore
+
+### Детали изменений:
+
+**.idea/.gitignore:**
+- Добавлены в игнор: dataSources.xml, data_source_mapping.xml, queries/, sqldialects.xml
+
+---
+
+## Коммит 4a10a99: added functionality to telemetry Legacy page
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/app/Http/Controllers/TelemetryController.php
+- services/php-web/laravel-patches/resources/views/telemetry.blade.php
+- services/php-web/laravel-patches/routes/web.php
+
+### Детали изменений:
+
+**TelemetryController.php:**
+- index() теперь загружает данные из telemetry_legacy (последние 100 записей)
+- Добавлен метод export() для экспорта в XLSX
+- XLSX генерируется вручную через Office Open XML формат (без библиотек)
+- Используется ZipArchive для создания xlsx файла
+- Файл удаляется после отправки (deleteFileAfterSend)
+
+**telemetry.blade.php:**
+- Удалён placeholder с spinner
+- Добавлена таблица с данными телеметрии (ID, дата, напряжение, температура, файл)
+- Добавлена кнопка "Скачать .xlsx"
+- Добавлена обработка пустых данных
+
+**routes/web.php:**
+- Добавлен маршрут /telemetry/export
+
+---
+
+## Коммит 318a455: fixed CMS blocks
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/app/Http/Controllers/CmsController.php
+
+### Детали изменений:
+
+**CmsController.php:**
+- Исправлены slug'и в SQL запросах: dashboard-welcome → dashboard_welcome
+- Аналогично для dashboard-unsafe и dashboard-not-found (дефисы заменены на подчёркивания)
+
+---
+
+## Коммит 73a9fc7: add new pages and features: JWST viewer, OSDR search/sort, fixed telemetry xlsx export
+
+### Изменённые файлы:
+- services/php-web/Dockerfile
+- services/php-web/laravel-patches/app/Http/Controllers/CmsController.php
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php
+- services/php-web/laravel-patches/resources/views/iss.blade.php
+- services/php-web/laravel-patches/resources/views/layouts/app.blade.php
+- services/php-web/laravel-patches/resources/views/osdr.blade.php
+
+### Детали изменений:
+
+**Dockerfile:**
+- Добавлен libzip-dev и расширение zip (для XLSX экспорта)
+
+**CmsController.php:**
+- Исправлен view: cms.index → cms
+
+**dashboard.blade.php:**
+- Изменена сетка: col-lg-7/col-lg-5 → col-lg-6/col-lg-6
+- Добавлен JWST Viewer (#jwstViewer) для просмотра выбранного изображения
+- Добавлена функция showJwstImage() - показывает детали изображения (obs, instrument, program, suffix)
+- Клик по изображению в галерее открывает его в viewer
+- Добавлена кнопка "Скачать" для изображений
+
+**iss.blade.php:**
+- Добавлен h-100 для выравнивания карточек по высоте
+
+**layouts/app.blade.php:**
+- Сокращены названия в навигации: "Astronomy API" → "Astronomy", "Telemetry Legacy" → "Telemetry"
+
+**osdr.blade.php:**
+- Добавлено поле поиска по названию (#searchInput)
+- Добавлена сортировка по колонкам (клик по заголовку)
+- Добавлены CSS стили для sortable колонок
+- Добавлен JavaScript для фильтрации и сортировки таблицы
+
+---
+
+## Коммит 2ac1ca1: add UI animations and sticky navbar; JWST viewer expand/collapse; mobile burger menu; loading states
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/resources/views/astronomy.blade.php
+- services/php-web/laravel-patches/resources/views/cms.blade.php
+- services/php-web/laravel-patches/resources/views/dashboard.blade.php
+- services/php-web/laravel-patches/resources/views/iss.blade.php
+- services/php-web/laravel-patches/resources/views/layouts/app.blade.php
+- services/php-web/laravel-patches/resources/views/osdr.blade.php
+- services/php-web/laravel-patches/resources/views/telemetry.blade.php
+
+### Детали изменений:
+
+**layouts/app.blade.php:**
+- Navbar стал sticky-top с shadow-sm
+- Добавлен burger menu для мобильных устройств (navbar-toggler)
+- Добавлены CSS анимации:
+  - fadeInDown для карточек
+  - pulse для loading состояний
+  - dots анимация для "Загрузка..."
+- Каскадная задержка анимации для элементов в row
+
+**dashboard.blade.php:**
+- JWST viewer теперь скрыт по умолчанию (max-width: 0, opacity: 0)
+- Добавлена анимация expand/collapse для JWST панели
+- Кнопка закрытия JWST viewer (#closeJwst)
+- ISS колонка занимает всю ширину когда JWST скрыт
+- Добавлен window._issMap для корректного resize карты при анимации
+- Loading состояние с анимированными точками
+
+**astronomy.blade.php:**
+- Добавлен loading state с spinner-dots
+
+**Все views:**
+- Добавлен mt-3 к контейнерам для отступа от sticky navbar
+
+---
+
+## Коммит a31afaa: added Time & Elevation fields to Astronomy API page; added bold font to active tab in navbar
+
+### Изменённые файлы:
+- services/php-web/laravel-patches/app/Http/Controllers/AstroController.php
+- services/php-web/laravel-patches/resources/views/astronomy.blade.php
+- services/php-web/laravel-patches/resources/views/layouts/app.blade.php
+
+### Детали изменений:
+
+**AstroController.php:**
+- Добавлен закомментированный код для ограничения days (max 30)
+
+**astronomy.blade.php:**
+- Добавлены новые поля в форму:
+  - Высота (elevation) в метрах
+  - Время (time) с input type="time"
+- Добавлены label'ы для всех полей формы
+- Изменён layout формы: align-items-center → align-items-end
+
+**layouts/app.blade.php:**
+- Добавлена подсветка активного пункта меню
+- Используется request()->is() для определения текущей страницы
+- Активный пункт получает классы: active fw-bold
+
+---
+
+## Коммит d9a34aa: added Redis caching, Rate-Limit middleware, and request validators for controllers
+
+### Изменённые файлы:
+- docker-compose.yml
+- services/php-web/Dockerfile
+- services/php-web/laravel-patches/app/Http/Controllers/AstroController.php
+- services/php-web/laravel-patches/app/Http/Controllers/DashboardController.php
+- services/php-web/laravel-patches/app/Http/Controllers/IssController.php
+- services/php-web/laravel-patches/app/Http/Controllers/OsdrController.php
+- services/php-web/laravel-patches/app/Http/Controllers/ProxyController.php
+- services/php-web/laravel-patches/app/Http/Middleware/RateLimitMiddleware.php (новый)
+- services/php-web/laravel-patches/app/Services/IssService.php (новый)
+- services/php-web/laravel-patches/app/Validators/AstroValidator.php (новый)
+- services/php-web/laravel-patches/app/Validators/JwstFeedValidator.php (новый)
+- services/php-web/laravel-patches/app/Validators/OsdrValidator.php (новый)
+- services/php-web/laravel-patches/app/Validators/TelemetryValidator.php (новый)
+- services/php-web/laravel-patches/routes/web.php
+
+### Детали изменений:
+
+**docker-compose.yml:**
+- Добавлен сервис Redis (redis:7-alpine)
+- Добавлен volume redisdata для персистентности
+- Добавлены переменные окружения для PHP: CACHE_DRIVER, REDIS_HOST, REDIS_PORT, RATE_LIMIT_PER_MINUTE
+- PHP зависит от redis (healthcheck)
+
+**Dockerfile:**
+- Установлен phpredis extension через pecl
+
+**RateLimitMiddleware.php (новый):**
+- Middleware для ограничения запросов по IP
+- Использует Cache для хранения счётчика
+- Возвращает 429 при превышении лимита
+- Добавляет заголовки X-RateLimit-Limit и X-RateLimit-Remaining
+
+**IssService.php (новый):**
+- Сервис для работы с ISS API
+- Кеширование getLast() на 30 сек
+- Кеширование getTrend() на 60 сек
+- Кеширование getOsdrList() на 1 час
+
+**Validators (новые):**
+- AstroValidator - валидация lat, lon, days, elevation, time
+- JwstFeedValidator - валидация source, suffix, program, instrument, page, perPage
+- OsdrValidator - валидация limit
+- TelemetryValidator - валидация limit
+
+**routes/web.php:**
+- Маршруты сгруппированы с RateLimitMiddleware
+- Страницы: 60 req/min
+- API: 120 req/min
+
+**Контроллеры:**
+- Рефакторинг для использования IssService и Validators
+- Dependency Injection для сервисов
+
+### Паттерны:
+- Rate Limiting Pattern
+- Cache-Aside Pattern (Redis)
+- Validator Pattern (отдельные классы валидации)
+- Service Layer Pattern
+
+---
+

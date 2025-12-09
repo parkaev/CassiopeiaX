@@ -1,7 +1,8 @@
 use std::time::Duration;
 use serde_json::Value;
 use crate::types::AppState;
-use crate::utils::{s_pick, t_pick};
+use crate::utils::s_pick;
+use crate::repo::osdr_repo;
 
 pub async fn fetch_and_store_osdr(st: &AppState) -> anyhow::Result<usize> {
     let client = reqwest::Client::builder().timeout(Duration::from_secs(30)).build()?;
@@ -20,21 +21,9 @@ pub async fn fetch_and_store_osdr(st: &AppState) -> anyhow::Result<usize> {
         let id = s_pick(&item, &["dataset_id","id","uuid","studyId","accession","osdr_id"]);
         let title = s_pick(&item, &["title","name","label"]);
         let status = s_pick(&item, &["status","state","lifecycle"]);
-        let updated = t_pick(&item, &["updated","updated_at","modified","lastUpdated","timestamp"]);
         
-        if let Some(ds) = id.clone() {
-            sqlx::query(
-                "INSERT INTO osdr_items(dataset_id, title, status, updated_at, raw)
-                 VALUES($1,$2,$3,$4,$5)
-                 ON CONFLICT (dataset_id) DO UPDATE
-                 SET title=EXCLUDED.title, status=EXCLUDED.status,
-                     updated_at=EXCLUDED.updated_at, raw=EXCLUDED.raw"
-            ).bind(ds).bind(title).bind(status).bind(updated).bind(item).execute(&st.pool).await?;
-        } else {
-            sqlx::query(
-                "INSERT INTO osdr_items(dataset_id, title, status, updated_at, raw)
-                 VALUES($1,$2,$3,$4,$5)"
-            ).bind::<Option<String>>(None).bind(title).bind(status).bind(updated).bind(item).execute(&st.pool).await?;
+        if let Some(ds) = id {
+            osdr_repo::upsert(&st.pool, &ds, title.as_deref(), status.as_deref(), item).await?;
         }
         written += 1;
     }

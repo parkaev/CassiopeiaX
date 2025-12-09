@@ -22,7 +22,7 @@ pub struct AppState {
     pub every_spacex: u64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 pub struct Trend {
     pub movement: bool,
     pub delta_km: f64,
