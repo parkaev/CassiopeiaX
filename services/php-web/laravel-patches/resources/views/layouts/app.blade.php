@@ -13,9 +13,15 @@
 <body>
 <nav class="navbar navbar-expand-lg bg-body-tertiary mb-3">
   <div class="container">
-    <a class="navbar-brand" href="/dashboard">Dashboard</a>
-    <a class="nav-link" href="/iss">ISS</a>
-    <a class="nav-link" href="/osdr">OSDR</a>
+    <a class="navbar-brand" href="/dashboard">CassiopeiaX</a>
+    <div class="navbar-nav mx-auto">
+      <a class="nav-link" href="/dashboard">Dashboard</a>
+      <a class="nav-link" href="/astronomy">Astronomy API</a>
+      <a class="nav-link" href="/iss">ISS</a>
+      <a class="nav-link" href="/osdr">OSDR</a>
+      <a class="nav-link" href="/cms">CMS</a>
+      <a class="nav-link" href="/telemetry">Telemetry Legacy</a>
+    </div>
   </div>
 </nav>
 @yield('content')
