@@ -1,13 +1,13 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::State, Json};
 use serde_json::Value;
+use crate::error::ApiError;
 use crate::types::{AppState, Trend};
 use crate::services::iss::fetch_and_store_iss;
 use crate::repo::iss_repo;
 use crate::utils::{num, haversine_km};
 
-pub async fn last_iss(State(st): State<AppState>) -> Result<Json<Value>, (StatusCode, String)> {
-    let record = iss_repo::get_last(&st.pool).await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+pub async fn last_iss(State(st): State<AppState>) -> Result<Json<Value>, ApiError> {
+    let record = iss_repo::get_last(&st.pool).await?;
 
     match record {
         Some(r) => Ok(Json(serde_json::json!({
@@ -17,15 +17,13 @@ pub async fn last_iss(State(st): State<AppState>) -> Result<Json<Value>, (Status
     }
 }
 
-pub async fn trigger_iss(State(st): State<AppState>) -> Result<Json<Value>, (StatusCode, String)> {
-    fetch_and_store_iss(&st.pool, &st.fallback_url).await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+pub async fn trigger_iss(State(st): State<AppState>) -> Result<Json<Value>, ApiError> {
+    fetch_and_store_iss(&st.pool, &st.fallback_url).await?;
     last_iss(State(st)).await
 }
 
-pub async fn iss_trend(State(st): State<AppState>) -> Result<Json<Trend>, (StatusCode, String)> {
-    let rows = iss_repo::get_last_two(&st.pool).await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+pub async fn iss_trend(State(st): State<AppState>) -> Result<Json<Trend>, ApiError> {
+    let rows = iss_repo::get_last_two(&st.pool).await?;
 
     if rows.len() < 2 {
         return Ok(Json(Trend::default()));
