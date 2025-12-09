@@ -16,11 +16,11 @@
     <a class="navbar-brand" href="/dashboard">CassiopeiaX</a>
     <div class="navbar-nav mx-auto">
       <a class="nav-link" href="/dashboard">Dashboard</a>
-      <a class="nav-link" href="/astronomy">Astronomy API</a>
+      <a class="nav-link" href="/astronomy">Astronomy</a>
       <a class="nav-link" href="/iss">ISS</a>
       <a class="nav-link" href="/osdr">OSDR</a>
       <a class="nav-link" href="/cms">CMS</a>
-      <a class="nav-link" href="/telemetry">Telemetry Legacy</a>
+      <a class="nav-link" href="/telemetry">Telemetry</a>
     </div>
   </div>
 </nav>

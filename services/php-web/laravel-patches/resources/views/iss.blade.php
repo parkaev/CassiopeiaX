@@ -15,7 +15,7 @@
 
   <div class="row g-3">
     <div class="col-md-6">
-      <div class="card shadow-sm">
+      <div class="card shadow-sm h-100">
         <div class="card-body">
           <h5 class="card-title">Последний снимок</h5>
           <div id="lastData">
@@ -37,7 +37,7 @@
     </div>
 
     <div class="col-md-6">
-      <div class="card shadow-sm">
+      <div class="card shadow-sm h-100">
         <div class="card-body">
           <h5 class="card-title">Тренд движения</h5>
           <div id="trendData">

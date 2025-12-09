@@ -4,29 +4,31 @@
 <div class="container pb-5">
   {{-- верхние карточки --}}
   <div class="row g-3 mb-2">
-    <div class="col-6 col-md-3"><div class="border rounded p-2 text-center">
+    <div class="col-6"><div class="border rounded p-2 text-center">
       <div class="small text-muted">Скорость МКС</div>
       <div class="fs-4" id="issSpeed">{{ isset(($iss['payload'] ?? [])['velocity']) ? number_format($iss['payload']['velocity'],0,'',' ') : '—' }}</div>
     </div></div>
-    <div class="col-6 col-md-3"><div class="border rounded p-2 text-center">
+    <div class="col-6"><div class="border rounded p-2 text-center">
       <div class="small text-muted">Высота МКС</div>
       <div class="fs-4" id="issAlt">{{ isset(($iss['payload'] ?? [])['altitude']) ? number_format($iss['payload']['altitude'],0,'',' ') : '—' }}</div>
     </div></div>
   </div>
 
   <div class="row g-3">
-    {{-- левая колонка: JWST наблюдение (как раньше было под APOD можно держать своим блоком) --}}
-    <div class="col-lg-7">
+    {{-- левая колонка: JWST наблюдение --}}
+    <div class="col-lg-6">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h5 class="card-title">JWST — выбранное наблюдение</h5>
-          <div class="text-muted">Этот блок остаётся как был (JSON/сводка). Основная галерея ниже.</div>
+          <div id="jwstViewer">
+            <div class="text-muted text-center py-4">Выберите изображение из галереи ниже</div>
+          </div>
         </div>
       </div>
     </div>
 
     {{-- правая колонка: карта МКС --}}
-    <div class="col-lg-5">
+    <div class="col-lg-6">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h5 class="card-title">МКС — положение и движение</h5>
@@ -195,17 +197,36 @@ document.addEventListener('DOMContentLoaded', async function () {
       (js.items||[]).forEach(it=>{
         const fig = document.createElement('figure');
         fig.className = 'jwst-item m-0';
+        fig.style.cursor = 'pointer';
         fig.innerHTML = `
-          <a href="${it.link||it.url}" target="_blank" rel="noreferrer">
-            <img loading="lazy" src="${it.url}" alt="JWST">
-          </a>
+          <img loading="lazy" src="${it.url}" alt="JWST">
           <figcaption class="jwst-cap">${(it.caption||'').replaceAll('<','&lt;')}</figcaption>`;
+        fig.addEventListener('click', () => showJwstImage(it));
         track.appendChild(fig);
       });
       info.textContent = `Источник: ${js.source} · Показано ${js.count||0}`;
     }catch(e){
       track.innerHTML = '<div class="p-3 text-danger">Ошибка загрузки</div>';
     }
+  }
+
+  function showJwstImage(item) {
+    const viewer = document.getElementById('jwstViewer');
+    const instruments = Array.isArray(item.inst) ? item.inst.join(', ') : (item.inst || '—');
+    viewer.innerHTML = `
+      <div class="text-center">
+        <img src="${item.url}" alt="JWST" class="rounded mb-3" style="width:100%; height:280px; object-fit:contain; background:#f8f9fa">
+      </div>
+      <table class="table table-sm mb-3">
+        <tr><th>Наблюдение</th><td>${item.obs || '—'}</td></tr>
+        <tr><th>Инструмент</th><td>${instruments}</td></tr>
+        <tr><th>Программа</th><td>${item.program || '—'}</td></tr>
+        <tr><th>Суффикс</th><td><code>${item.suffix || '—'}</code></td></tr>
+      </table>
+      <div class="text-center">
+        <a href="${item.url}" download class="btn btn-success btn-sm">Скачать</a>
+      </div>
+    `;
   }
 
   form.addEventListener('submit', function(ev){
