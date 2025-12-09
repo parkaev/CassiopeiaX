@@ -10,6 +10,7 @@ Route::get('/astronomy', [\App\Http\Controllers\AstronomyController::class, 'ind
 Route::get('/iss',[\App\Http\Controllers\IssController::class,'index']);
 Route::get('/osdr',[\App\Http\Controllers\OsdrController::class,'index']);
 Route::get('/telemetry', [\App\Http\Controllers\TelemetryController::class, 'index']);
+Route::get('/telemetry/export', [\App\Http\Controllers\TelemetryController::class, 'export']);
 Route::get('/cms', [\App\Http\Controllers\CmsController::class, 'index']);
 
 // Прокси к rust_iss
