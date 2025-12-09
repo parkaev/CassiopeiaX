@@ -8,15 +8,26 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="card-title m-0">Астрономические события (AstronomyAPI)</h5>
-            <form id="astroForm" class="row g-2 align-items-center">
+            <form id="astroForm" class="row g-2 align-items-end">
               <div class="col-auto">
-                <input type="number" step="0.0001" class="form-control form-control-sm" name="lat" value="55.7558" placeholder="lat">
+                <label class="form-label small mb-1">Широта</label>
+                <input type="number" step="0.0001" class="form-control form-control-sm" name="lat" value="55.7558">
               </div>
               <div class="col-auto">
-                <input type="number" step="0.0001" class="form-control form-control-sm" name="lon" value="37.6176" placeholder="lon">
+                <label class="form-label small mb-1">Долгота</label>
+                <input type="number" step="0.0001" class="form-control form-control-sm" name="lon" value="37.6176">
               </div>
               <div class="col-auto">
-                <input type="number" min="1" max="30" class="form-control form-control-sm" name="days" value="7" style="width:90px" title="дней">
+                <label class="form-label small mb-1">Высота (м)</label>
+                <input type="number" step="0.01" class="form-control form-control-sm" name="elevation" value="0" style="width:90px">
+              </div>
+              <div class="col-auto">
+                <label class="form-label small mb-1">Время</label>
+                <input type="time" class="form-control form-control-sm" name="time" value="12:00">
+              </div>
+              <div class="col-auto">
+                <label class="form-label small mb-1">Дней</label>
+                <input type="number" min="1" max="30" class="form-control form-control-sm" name="days" value="7" style="width:70px">
               </div>
               <div class="col-auto">
                 <button class="btn btn-sm btn-primary" type="submit">Показать</button>

@@ -50,12 +50,12 @@
     </button>
     <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
       <div class="navbar-nav">
-        <a class="nav-link" href="/dashboard">Dashboard</a>
-        <a class="nav-link" href="/astronomy">Astronomy</a>
-        <a class="nav-link" href="/iss">ISS</a>
-        <a class="nav-link" href="/osdr">OSDR</a>
-        <a class="nav-link" href="/cms">CMS</a>
-        <a class="nav-link" href="/telemetry">Telemetry</a>
+        <a class="nav-link {{ request()->is('dashboard') ? 'active fw-bold' : '' }}" href="/dashboard">Dashboard</a>
+        <a class="nav-link {{ request()->is('astronomy') ? 'active fw-bold' : '' }}" href="/astronomy">Astronomy</a>
+        <a class="nav-link {{ request()->is('iss') ? 'active fw-bold' : '' }}" href="/iss">ISS</a>
+        <a class="nav-link {{ request()->is('osdr') ? 'active fw-bold' : '' }}" href="/osdr">OSDR</a>
+        <a class="nav-link {{ request()->is('cms') ? 'active fw-bold' : '' }}" href="/cms">CMS</a>
+        <a class="nav-link {{ request()->is('telemetry*') ? 'active fw-bold' : '' }}" href="/telemetry">Telemetry</a>
       </div>
     </div>
   </div>
