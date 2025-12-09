@@ -5,8 +5,25 @@ volumes:
   pgdata:
   appdata:
   csvdata:
+  redisdata:
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: iss_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    networks:
+      - backend
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   db:
     image: postgres:16
     container_name: iss_db
@@ -65,11 +82,17 @@ services:
       DB_DATABASE: monolith
       DB_USERNAME: monouser
       DB_PASSWORD: monopass
+      CACHE_DRIVER: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RATE_LIMIT_PER_MINUTE: 60
     depends_on:
       db:
         condition: service_healthy
       rust_iss:
         condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - backend
     volumes:
