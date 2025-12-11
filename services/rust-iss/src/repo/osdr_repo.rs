@@ -33,7 +33,8 @@ pub async fn upsert(pool: &PgPool, dataset_id: &str, title: Option<&str>, status
     sqlx::query(
         "INSERT INTO osdr_items(dataset_id, title, status, raw)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (dataset_id) DO UPDATE SET title=EXCLUDED.title, status=EXCLUDED.status, raw=EXCLUDED.raw, updated_at=now()"
+         ON CONFLICT (dataset_id) WHERE dataset_id IS NOT NULL 
+         DO UPDATE SET title=EXCLUDED.title, status=EXCLUDED.status, raw=EXCLUDED.raw, updated_at=now()"
     ).bind(dataset_id).bind(title).bind(status).bind(raw).execute(pool).await?;
     Ok(())
 }

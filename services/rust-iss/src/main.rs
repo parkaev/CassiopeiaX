@@ -8,7 +8,7 @@ use rust_iss::{
     config::create_app_state,
     database::init_db,
     handlers::{iss::*, osdr::*, space::*},
-    lock::{lock_id, try_advisory_lock, release_advisory_lock},
+    lock::{lock_id, with_advisory_lock},
     services::{iss::fetch_and_store_iss, nasa::*, osdr::fetch_and_store_osdr},
     types::Health,
 };
@@ -50,10 +50,10 @@ async fn spawn_background_tasks(state: &rust_iss::types::AppState) {
         tokio::spawn(async move {
             let lid = lock_id("osdr");
             loop {
-                if try_advisory_lock(&st.pool, lid).await {
-                    if let Err(e) = fetch_and_store_osdr(&st).await { error!("osdr err {e:?}") }
-                    release_advisory_lock(&st.pool, lid).await;
-                } else {
+                let st2 = st.clone();
+                if with_advisory_lock(&st.pool, lid, || async {
+                    if let Err(e) = fetch_and_store_osdr(&st2).await { error!("osdr err {e:?}") }
+                }).await.is_none() {
                     warn!("osdr lock held, skipping");
                 }
                 tokio::time::sleep(Duration::from_secs(st.every_osdr)).await;
@@ -67,10 +67,11 @@ async fn spawn_background_tasks(state: &rust_iss::types::AppState) {
         tokio::spawn(async move {
             let lid = lock_id("iss");
             loop {
-                if try_advisory_lock(&st.pool, lid).await {
-                    if let Err(e) = fetch_and_store_iss(&st.pool, &st.fallback_url).await { error!("iss err {e:?}") }
-                    release_advisory_lock(&st.pool, lid).await;
-                } else {
+                let pool = st.pool.clone();
+                let url = st.fallback_url.clone();
+                if with_advisory_lock(&st.pool, lid, || async {
+                    if let Err(e) = fetch_and_store_iss(&pool, &url).await { error!("iss err {e:?}") }
+                }).await.is_none() {
                     warn!("iss lock held, skipping");
                 }
                 tokio::time::sleep(Duration::from_secs(st.every_iss)).await;
@@ -84,10 +85,10 @@ async fn spawn_background_tasks(state: &rust_iss::types::AppState) {
         tokio::spawn(async move {
             let lid = lock_id("apod");
             loop {
-                if try_advisory_lock(&st.pool, lid).await {
-                    if let Err(e) = fetch_apod(&st).await { error!("apod err {e:?}") }
-                    release_advisory_lock(&st.pool, lid).await;
-                } else {
+                let st2 = st.clone();
+                if with_advisory_lock(&st.pool, lid, || async {
+                    if let Err(e) = fetch_apod(&st2).await { error!("apod err {e:?}") }
+                }).await.is_none() {
                     warn!("apod lock held, skipping");
                 }
                 tokio::time::sleep(Duration::from_secs(st.every_apod)).await;
@@ -101,10 +102,10 @@ async fn spawn_background_tasks(state: &rust_iss::types::AppState) {
         tokio::spawn(async move {
             let lid = lock_id("neo");
             loop {
-                if try_advisory_lock(&st.pool, lid).await {
-                    if let Err(e) = fetch_neo_feed(&st).await { error!("neo err {e:?}") }
-                    release_advisory_lock(&st.pool, lid).await;
-                } else {
+                let st2 = st.clone();
+                if with_advisory_lock(&st.pool, lid, || async {
+                    if let Err(e) = fetch_neo_feed(&st2).await { error!("neo err {e:?}") }
+                }).await.is_none() {
                     warn!("neo lock held, skipping");
                 }
                 tokio::time::sleep(Duration::from_secs(st.every_neo)).await;
@@ -118,10 +119,10 @@ async fn spawn_background_tasks(state: &rust_iss::types::AppState) {
         tokio::spawn(async move {
             let lid = lock_id("donki");
             loop {
-                if try_advisory_lock(&st.pool, lid).await {
-                    if let Err(e) = fetch_donki(&st).await { error!("donki err {e:?}") }
-                    release_advisory_lock(&st.pool, lid).await;
-                } else {
+                let st2 = st.clone();
+                if with_advisory_lock(&st.pool, lid, || async {
+                    if let Err(e) = fetch_donki(&st2).await { error!("donki err {e:?}") }
+                }).await.is_none() {
                     warn!("donki lock held, skipping");
                 }
                 tokio::time::sleep(Duration::from_secs(st.every_donki)).await;
@@ -135,10 +136,10 @@ async fn spawn_background_tasks(state: &rust_iss::types::AppState) {
         tokio::spawn(async move {
             let lid = lock_id("spacex");
             loop {
-                if try_advisory_lock(&st.pool, lid).await {
-                    if let Err(e) = fetch_spacex_next(&st).await { error!("spacex err {e:?}") }
-                    release_advisory_lock(&st.pool, lid).await;
-                } else {
+                let st2 = st.clone();
+                if with_advisory_lock(&st.pool, lid, || async {
+                    if let Err(e) = fetch_spacex_next(&st2).await { error!("spacex err {e:?}") }
+                }).await.is_none() {
                     warn!("spacex lock held, skipping");
                 }
                 tokio::time::sleep(Duration::from_secs(st.every_spacex)).await;
