@@ -249,12 +249,6 @@ tokio::spawn(async move {
 
 ![iss](https://github.com/parkaev/CassiopeiaX/blob/main/images_for_report/iss.png)
 
-### Telemetry
-- Таблица с данными телеметрии (ID, дата, напряжение, температура, файл)
-- Кнопка экспорта в XLSX
-
-![telemetry](https://github.com/parkaev/CassiopeiaX/blob/main/images_for_report/telemetry.png)
-
 ### Layout
 - Sticky navbar (фиксируется при прокрутке)
 - Mobile burger menu (navbar-toggler)
